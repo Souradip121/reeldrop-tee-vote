@@ -9,7 +9,11 @@
   const SORT_KEY = "tee_vote_sort";
   const configured = !!(CFG.supabaseUrl && CFG.supabaseKey && !/YOUR_/.test(CFG.supabaseUrl + CFG.supabaseKey));
 
-  const state = { voter: null, code: null, me: null, mine: {}, results: null, error: "", pending: 0, sort: "order" };
+  const state = { voter: null, code: null, me: null, mine: {}, ab: null, results: null, error: "", pending: 0, sort: "order", view: "main" };
+  const AB = [
+    { id: "original", letter: "A", title: "Original", desc: "Navy line-art Lolo on the coral circle" },
+    { id: "colour", letter: "B", title: "Coloured Lolo", desc: "Full-colour pink Lolo on the coral circle" },
+  ];
   try { state.sort = localStorage.getItem(SORT_KEY) || "order"; } catch (e) { /* storage blocked */ }
 
   const $ = (s, r = document) => r.querySelector(s);
@@ -41,7 +45,7 @@
   }
   function forget() {
     try { localStorage.removeItem(AUTH_KEY); } catch (e) { /* ignore */ }
-    state.voter = state.code = state.me = null; state.mine = {};
+    state.voter = state.code = state.me = null; state.mine = {}; state.ab = null;
     render();
   }
 
@@ -114,6 +118,91 @@
       state.pending--;
     }
   }
+  /* ---------- vote 2: original vs coloured Lolo (one pick each) ---------- */
+  const abData = () => (state.results && state.results.ab) || { closed: false, original: 0, colour: 0, originals: [], colours: [] };
+  const canVoteAB = () => configured && !!state.me && !abData().closed;
+  function applyLocalAB(from, to) {
+    const ab = state.results && state.results.ab;
+    if (!ab || !state.me) return;
+    const name = state.me.name;
+    if (from) { ab[from]--; ab[from + "s"] = ab[from + "s"].filter((n) => n !== name); }
+    if (to) { ab[to]++; ab[to + "s"] = [...ab[to + "s"], name].sort(); }
+  }
+  async function voteAB(choice) {
+    if (!canVoteAB()) return;
+    const from = state.ab;
+    const to = from === choice ? null : choice; // tap your pick again to undo it
+    state.ab = to; applyLocalAB(from, to); renderAB(); renderTabs();
+    state.pending++;
+    try {
+      const res = await rpc("tee_vote_ab_set", { p_voter: state.voter, p_code: state.code, p_choice: to || "" });
+      if (state.pending === 1) { state.results = res; renderAB(); }
+    } catch (e) {
+      state.ab = from; applyLocalAB(to, from); renderAB(); renderTabs();
+      toast(`Couldn't save that pick. ${e.message}`);
+    } finally {
+      state.pending--;
+    }
+  }
+  function renderAB() {
+    const ab = abData();
+    const total = ab.original + ab.colour;
+    const lead = ab.original === ab.colour ? null : ab.original > ab.colour ? AB[0] : AB[1];
+    $("#ab-sum").replaceChildren(!configured ? "" : !total ? "No picks yet."
+      : lead ? el("span", {}, el("span", { class: "lead-tag" }, `${lead.letter} · ${lead.title}`), ` leads, ${Math.max(ab.original, ab.colour)} to ${Math.min(ab.original, ab.colour)}`)
+      : `Tied, ${ab.original} each`);
+    $("#ab-grid").replaceChildren(...AB.map((o) => {
+      const n = ab[o.id] || 0;
+      const names = ab[o.id + "s"] || [];
+      const mine = state.ab === o.id;
+      return el("article", { class: "opt" + (mine ? " picked" : "") },
+        el("button", { class: "thumb", type: "button", "aria-label": `Open option ${o.letter} larger`, onclick: () => openAbLb(o.id) },
+          el("img", { src: `assets/img/ab-${o.id}.jpg`, alt: `We're reeldrop on a black tee, ${o.title.toLowerCase()}`, width: 900, height: 1012 })),
+        el("div", { class: "opt-body" },
+          el("div", { class: "opt-top" }, el("span", { class: "letter" }, o.letter), el("h3", {}, o.title)),
+          el("p", { class: "opt-desc" }, o.desc),
+          el("div", { class: "opt-count" }, el("b", {}, String(n)), el("span", {}, total ? `${Math.round((n / total) * 100)}%` : "0%")),
+          el("div", { class: "meter", "aria-hidden": "true" }, el("i", { style: `width:${total ? (n / total) * 100 : 0}%` })),
+          el("p", { class: "opt-names" }, names.join(", ")),
+          state.me ? el("button", { class: "pick", type: "button", disabled: !canVoteAB(), "aria-pressed": String(mine), onclick: () => voteAB(o.id) },
+            mine ? `Picked ${o.letter} ✓` : `Pick ${o.letter}`) : null));
+    }));
+    const res = state.results;
+    const picked = new Set([...(ab.originals || []), ...(ab.colours || [])]);
+    $("#ab-people").replaceChildren(...((res && res.voters) || []).filter((v) => v.id !== "claude-test").map((v) =>
+      el("span", { class: "person" + (picked.has(v.name) ? " done" : "") }, v.name, el("span", {}, picked.has(v.name) ? "✓ picked" : "waiting"))));
+  }
+  function openAbLb(id) {
+    const o = AB.find((x) => x.id === id);
+    lbId = null;
+    $("#lb-title").textContent = `Vote 2 · ${o.letter} · ${o.title}`;
+    $("#lb-body").replaceChildren(el("div", { class: "lb" },
+      el("div", { class: "lb-img" }, el("img", { src: `assets/img/ab-${o.id}.jpg`, alt: `We're reeldrop on a black tee, ${o.title.toLowerCase()}`, width: 900, height: 1012 })),
+      el("div", { class: "lb-side" },
+        el("h3", {}, `${o.letter} · ${o.title}`),
+        el("p", { class: "lede" }, o.desc + ". Printed on a black tee, 10.2 × 16 in on the back."),
+        state.me ? el("button", { class: "pick", type: "button", disabled: !canVoteAB(), "aria-pressed": String(state.ab === o.id), onclick: () => { voteAB(o.id); openAbLb(o.id); } },
+          state.ab === o.id ? `Picked ${o.letter} ✓` : `Pick ${o.letter}`) : null)));
+    const dlg = $("#lb");
+    if (!dlg.open) dlg.showModal();
+  }
+
+  /* ---------- tabs ---------- */
+  function setView(v, push) {
+    state.view = v === "ab" ? "ab" : "main";
+    if (push) history.replaceState(null, "", location.pathname + location.search + (state.view === "ab" ? "#ab" : ""));
+    renderTabs(); renderDock();
+    window.scrollTo({ top: 0 });
+  }
+  function renderTabs() {
+    for (const a of document.querySelectorAll("#tabs a")) {
+      if (a.dataset.view === state.view) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
+    }
+    $("#view-main").hidden = state.view !== "main";
+    $("#view-ab").hidden = state.view !== "ab";
+    $("#ab-new").hidden = !(state.me && !state.ab && !abData().closed && state.view !== "ab");
+  }
+
   function nextUnrated() {
     const d = ordered().find((x) => !state.mine[x.id]);
     if (!d) { toast("You've rated every design. Thank you!"); return; }
@@ -206,7 +295,7 @@
   }
   function renderDock() {
     const dock = $("#dock");
-    dock.hidden = !canVote();
+    dock.hidden = !canVote() || state.view !== "main";
     if (dock.hidden) return;
     const n = rated(), t = DESIGNS.length;
     $("#prog-t").replaceChildren(n >= t ? "All done, thank you!" : `${n} of ${t} rated`, el("span", {}, n >= t ? "" : " · votes save as you tap"));
@@ -221,10 +310,10 @@
     const have = [...document.querySelectorAll("#grid > .card")].map((n) => n.id).join(",");
     if (want !== have) renderGrid();
     else for (const d of DESIGNS) renderCard(d.id);
-    renderLeaders(); renderPeople(); renderDock(); renderBanner();
+    renderLeaders(); renderPeople(); renderDock(); renderBanner(); renderAB(); renderTabs();
     if (lbId) drawLb();
   }
-  function render() { renderWho(); renderBanner(); renderSort(); renderGrid(); renderLeaders(); renderPeople(); renderDock(); }
+  function render() { renderWho(); renderBanner(); renderSort(); renderGrid(); renderLeaders(); renderPeople(); renderAB(); renderTabs(); renderDock(); }
 
   /* ---------- lightbox ---------- */
   let lbId = null, lbTee = "white";
@@ -263,12 +352,18 @@
         renderSort(); renderGrid();
       });
     }
+    for (const a of document.querySelectorAll("#tabs a")) {
+      a.addEventListener("click", (e) => { e.preventDefault(); setView(a.dataset.view, true); });
+    }
+    window.addEventListener("hashchange", () => { if (!/[?&]?v=/.test(location.hash)) setView(location.hash === "#ab" ? "ab" : "main", false); });
     if (!configured) return;
+    const wantAB = /(^#|&)(ab|tab=ab)(&|$)/.test(location.hash);
     const auth = readAuth();
+    if (wantAB) setView("ab", true);
     const jobs = [rpc("tee_vote_results").then((r) => { state.results = r; }).catch(() => {})];
     if (auth) {
       jobs.push(rpc("tee_vote_me", { p_voter: auth.v, p_code: auth.k }).then((me) => {
-        state.voter = auth.v; state.code = auth.k; state.me = me; state.mine = me.votes || {};
+        state.voter = auth.v; state.code = auth.k; state.me = me; state.mine = me.votes || {}; state.ab = me.ab || null;
       }).catch((e) => {
         state.error = `${e.message} Ask Souradip to resend your personal link.`;
         try { localStorage.removeItem(AUTH_KEY); } catch (er) { /* ignore */ }

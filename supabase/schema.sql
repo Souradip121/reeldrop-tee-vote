@@ -32,13 +32,22 @@ create table if not exists public.tee_vote_settings (
   closed boolean not null default false
 );
 insert into public.tee_vote_settings (id) values (1) on conflict (id) do nothing;
+alter table public.tee_vote_settings add column if not exists ab_closed boolean not null default false;
+
+-- vote 2: "We're reeldrop" on the black tee, original line-art Lolo vs coloured Lolo. One pick per voter.
+create table if not exists public.tee_vote_ab (
+  voter      text primary key references public.tee_vote_voters (id) on delete cascade,
+  choice     text not null check (choice in ('original', 'colour')),
+  updated_at timestamptz not null default now()
+);
 
 alter table public.tee_vote_designs  enable row level security;
 alter table public.tee_vote_voters   enable row level security;
 alter table public.tee_vote_votes    enable row level security;
 alter table public.tee_vote_settings enable row level security;
-revoke all on public.tee_vote_designs, public.tee_vote_voters, public.tee_vote_votes, public.tee_vote_settings
-  from anon, authenticated;
+alter table public.tee_vote_ab       enable row level security;
+revoke all on public.tee_vote_designs, public.tee_vote_voters, public.tee_vote_votes, public.tee_vote_settings,
+  public.tee_vote_ab from anon, authenticated;
 
 insert into public.tee_vote_designs (id, title, sort) values
   ('01-feature-tiles',         'reeldrop features',      1),
@@ -76,6 +85,14 @@ as $$
   select jsonb_build_object(
     'closed', (select s.closed from public.tee_vote_settings s where s.id = 1),
     'total', (select count(*) from public.tee_vote_designs),
+    'ab', jsonb_build_object(
+      'closed', (select s.ab_closed from public.tee_vote_settings s where s.id = 1),
+      'original', (select count(*) from public.tee_vote_ab x where x.choice = 'original'),
+      'colour',   (select count(*) from public.tee_vote_ab x where x.choice = 'colour'),
+      'originals', (select coalesce(jsonb_agg(v.display_name order by v.display_name), '[]'::jsonb)
+                    from public.tee_vote_ab x join public.tee_vote_voters v on v.id = x.voter where x.choice = 'original'),
+      'colours',   (select coalesce(jsonb_agg(v.display_name order by v.display_name), '[]'::jsonb)
+                    from public.tee_vote_ab x join public.tee_vote_voters v on v.id = x.voter where x.choice = 'colour')),
     'voters', (
       select coalesce(jsonb_agg(jsonb_build_object(
                'id', v.id, 'name', v.display_name,
@@ -113,7 +130,34 @@ begin
     'id', v_id,
     'name', (select v.display_name from public.tee_vote_voters v where v.id = v_id),
     'votes', (select coalesce(jsonb_object_agg(x.design, x.value), '{}'::jsonb)
-              from public.tee_vote_votes x where x.voter = v_id));
+              from public.tee_vote_votes x where x.voter = v_id),
+    'ab', (select x.choice from public.tee_vote_ab x where x.voter = v_id));
+end;
+$$;
+
+-- voter: vote 2 pick: 'original' | 'colour' | '' (clear). Returns fresh results.
+create or replace function public.tee_vote_ab_set(p_voter text, p_code text, p_choice text)
+returns jsonb
+language plpgsql volatile security definer set search_path = ''
+as $$
+declare
+  v_id text := lower(trim(p_voter));
+begin
+  if not public.tee_vote_check(p_voter, p_code) then
+    raise exception 'This voting link is not valid.' using errcode = '28000';
+  end if;
+  if (select s.ab_closed from public.tee_vote_settings s where s.id = 1) then
+    raise exception 'This vote is closed.';
+  end if;
+  if coalesce(p_choice, '') = '' then
+    delete from public.tee_vote_ab where voter = v_id;
+  elsif p_choice in ('original', 'colour') then
+    insert into public.tee_vote_ab (voter, choice, updated_at) values (v_id, p_choice, now())
+    on conflict (voter) do update set choice = excluded.choice, updated_at = now();
+  else
+    raise exception 'Pick original or colour.';
+  end if;
+  return public.tee_vote_results();
 end;
 $$;
 
@@ -151,8 +195,11 @@ revoke all on function public.tee_vote_check(text, text) from public, anon, auth
 revoke all on function public.tee_vote_results() from public;
 revoke all on function public.tee_vote_me(text, text) from public;
 revoke all on function public.tee_vote_set(text, text, text, int) from public;
+revoke all on function public.tee_vote_ab_set(text, text, text) from public;
 grant execute on function public.tee_vote_results() to anon, authenticated;
 grant execute on function public.tee_vote_me(text, text) to anon, authenticated;
 grant execute on function public.tee_vote_set(text, text, text, int) to anon, authenticated;
+grant execute on function public.tee_vote_ab_set(text, text, text) to anon, authenticated;
 
--- To close voting later:  update public.tee_vote_settings set closed = true where id = 1;
+-- Close the main vote:  update public.tee_vote_settings set closed = true where id = 1;
+-- Close vote 2:         update public.tee_vote_settings set ab_closed = true where id = 1;
