@@ -21,16 +21,20 @@
   </div>
   <h1>Rate the <em>Lolo</em> tees.</h1>
   <p class="lede">Thirteen designs for the reeldrop x Lolo drop. Give each one a like or a dislike. Scores update live for everyone, and you can change a vote any time.</p>
+  <nav class="tabs" id="tabs" aria-label="Votes">
+    <a href="#" data-view="main" aria-current="page">All 13 designs</a>
+    <a href="#ab" data-view="ab">We&rsquo;re reeldrop: A vs B <span class="new" id="ab-new" hidden>New</span></a>
+  </nav>
   <p class="banner" id="banner" hidden></p>
+</header>
 
+<main class="wrap">
+ <div id="view-main">
   <section class="leaders" id="leaders" aria-labelledby="leaders-h" hidden>
     <div class="leaders-head"><span class="label" id="leaders-h">Leading right now</span></div>
     <div class="lead-list" id="lead-list"></div>
     <div class="people" id="people" aria-label="Who has voted"></div>
   </section>
-</header>
-
-<main class="wrap">
   <div class="bar-head">
     <h2>All designs</h2>
     <div class="seg" id="sort" role="group" aria-label="Sort designs">
@@ -39,6 +43,18 @@
     </div>
   </div>
   <section class="grid" id="grid" aria-label="Designs"></section>
+ </div>
+
+ <section id="view-ab" aria-labelledby="ab-h" hidden>
+  <div class="ab-head">
+    <span class="label">Vote 2 &middot; black tee only</span>
+    <h2 id="ab-h">We&rsquo;re reeldrop: which Lolo?</h2>
+    <p class="lede">Same design, same black tee, two Lolos. Pick the one you&rsquo;d wear. Tap your pick again to undo it.</p>
+  </div>
+  <div class="ab-sum" id="ab-sum"></div>
+  <div class="ab-grid" id="ab-grid"></div>
+  <div class="people" id="ab-people" aria-label="Who has picked"></div>
+ </section>
 </main>
 
 <div class="dock" id="dock" hidden>
@@ -56,7 +72,7 @@
   <div id="lb-body"></div>
 </dialog>
 
-<footer class="wrap">reeldrop x Lolo tee collection &middot; Nov 2026 &middot; Likes count +1, dislikes &minus;1</footer>
+<footer class="wrap">reeldrop x Lolo tee collection &middot; Nov 2026 &middot; Vote 1: likes +1, dislikes &minus;1 &middot; Vote 2: one pick each</footer>
 
 <script src="assets/config.js"></script>
 <script src="assets/designs.js"></script>
