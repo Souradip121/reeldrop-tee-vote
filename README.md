@@ -1,53 +1,48 @@
 # reeldrop Tee Vote
 
-A mobile-first voting page with two votes:
-
-1. **All 13 designs**: each voter gives every reeldrop x Lolo design a like (+1) or a dislike (−1).
-   Scores, the top three and who voted which way are live on the homepage.
-2. **We're reeldrop: A vs B** (`#ab`): design 09 on a black tee, original line-art Lolo (A) vs
-   coloured Lolo (B). One pick per voter.
+A one-page, mobile-first vote on the six black-tee versions of the **We're reeldrop** design:
+coloured Lolo, 3D pop-out, mixed-media world, shooting a reel, "this is fine", and approve / reject.
 
 Live: https://souradip121.github.io/reeldrop-tee-vote/
 
-## How voting works
+## How it works
 
-- Six voters: Piyush, Souradip, Baivab, Aishi, Piuli, Samiran. Each has a private link
-  (`…/#v=<name>&k=<code>`). Opening it once signs that phone in; the code is then hidden from the address bar.
-- Anyone without a link sees the live scores but can't vote.
-- Votes save as you tap. Tap your current vote again to clear it.
+1. Pick your name from the dropdown (Piyush, Souradip, Baivab, Aishi, Piuli, Samiran).
+2. See one design at a time and tap **Like** or **Dislike** (or swipe the picture, or use ← →).
+3. Review all six, change any, then **Submit**. After submitting, the vote is locked.
+4. You then see your own vote and the results so far. Nobody sees scores before submitting.
+
+Progress is kept on the phone, so closing the page mid-way and coming back resumes where you were.
+Anyone who opens the link can pick any name that hasn't voted yet: there is no password.
 
 ## Supabase
 
-Project `nkcmgcunnrqulocdwgxr`. Everything lives in `public.tee_vote_*` (see `supabase/schema.sql`).
-The tables have row-level security on and no policies, so the publishable key in `assets/config.js`
-can only call these functions:
+Project `nkcmgcunnrqulocdwgxr`. The ballot lives in `public.tee_vote2_*` (see `supabase/ballot.sql`);
+voters come from `public.tee_vote_voters`. Tables have row-level security on and no policies, so the
+publishable key in `assets/config.js` can only call:
 
-| Function | Who | Does |
-|---|---|---|
-| `tee_vote_results()` | anyone | scores, names, each voter's progress |
-| `tee_vote_me(voter, code)` | a voter | checks the code, returns their votes |
-| `tee_vote_set(voter, code, design, value)` | a voter | sets +1 / −1 / 0 on one design |
-| `tee_vote_ab_set(voter, code, choice)` | a voter | vote 2: `original`, `colour` or `''` to clear |
+| Function | Does |
+|---|---|
+| `tee_vote2_status()` | names (and who has voted), design list; never scores |
+| `tee_vote2_submit(voter, votes)` | saves a complete ballot once, then locks that voter |
+| `tee_vote2_results(voter)` | scores and names, only for a voter who has submitted (or once closed) |
 
-Codes are stored only as SHA-256 hashes. The voter seed (`supabase/seed_voters.sql`) and the links
-(`voter-links.txt`) are kept out of git.
+`supabase/schema.sql` holds the earlier tabbed votes (`tee_vote_votes`, `tee_vote_ab`); those tables
+are kept as history and are no longer used by the page.
 
 Useful SQL (Supabase SQL editor):
 
 ```sql
--- close voting (buttons disable, page shows final scores)
-update public.tee_vote_settings set closed = true where id = 1;
--- close vote 2 only
-update public.tee_vote_settings set ab_closed = true where id = 1;
--- reopen
-update public.tee_vote_settings set closed = false where id = 1;
--- wipe all votes
-delete from public.tee_vote_votes;
-delete from public.tee_vote_ab;
+-- close voting (results then show to everyone)
+update public.tee_vote2_settings set closed = true where id = 1;
+-- let one person vote again
+delete from public.tee_vote2_submissions where voter = 'piyush';
+-- start the whole vote over
+delete from public.tee_vote2_submissions;
 ```
 
 ## Files
 
 - `index.html`, `assets/app.js`, `assets/style.css`: the page (no build step)
-- `assets/designs.js`: the 13 designs
-- `assets/img/`: mockups (pair, white tee, black tee per design)
+- `assets/designs.js`: the six designs
+- `assets/img/v3-*.jpg`: black-tee mockups
