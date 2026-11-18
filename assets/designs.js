@@ -1,106 +1,86 @@
 window.DESIGNS = [
   {
-    "id": "01-feature-tiles",
+    "id": "14-were-coloured",
     "num": "01",
-    "title": "reeldrop features™",
-    "style": "Botanique tile grid",
-    "features": "All nine features, one Lolo each",
-    "method": "Screen print 2 colours or DTF"
+    "title": "Coloured Lolo",
+    "style": "We’re reeldrop · black tee",
+    "features": "Full-colour Lolo taking a selfie, lower body behind the circle",
+    "method": "DTF full colour",
+    "tees": [
+      "black"
+    ],
+    "imgs": {
+      "black": "assets/img/v3-current.jpg"
+    }
   },
   {
-    "id": "02-heart-of-the-feed",
+    "id": "15-were-3d-popout",
     "num": "02",
-    "title": "Heart of the Feed",
-    "style": "Linocut souvenir print",
-    "features": "Studio, Lolo monument, scheduling clock tower, a stadium of hearts",
-    "method": "Screen print 1 colour"
+    "title": "3D pop-out",
+    "style": "We’re reeldrop · black tee",
+    "features": "Lolo climbs out of the coral circle toward you, phone in hand",
+    "method": "DTF full colour",
+    "tees": [
+      "black"
+    ],
+    "imgs": {
+      "black": "assets/img/v3-popout.jpg"
+    }
   },
   {
-    "id": "03-schedule-anywhere",
+    "id": "16-were-world",
     "num": "03",
-    "title": "Schedule Anywhere",
-    "style": "Risograph comic page",
-    "features": "Scheduling: post from a campsite",
-    "method": "Screen print 1 colour (halftones) or DTF"
+    "title": "Mixed-media world",
+    "style": "We’re reeldrop · black tee",
+    "features": "A collage creator world inside the circle: phone skyline, film-strip roads",
+    "method": "DTF full colour",
+    "tees": [
+      "black"
+    ],
+    "imgs": {
+      "black": "assets/img/v3-world.jpg"
+    }
   },
   {
-    "id": "04-self-care-sunday",
+    "id": "17-were-reel",
     "num": "04",
-    "title": "Self Care Sunday",
-    "style": "Indie cartoon on black",
-    "features": "Scheduling: reels post while Lolo soaks",
-    "method": "DTF full colour"
+    "title": "Shooting a reel",
+    "style": "We’re reeldrop · black tee",
+    "features": "Lolo filming on a gimbal with a ring light and clapperboard",
+    "method": "DTF full colour",
+    "tees": [
+      "black"
+    ],
+    "imgs": {
+      "black": "assets/img/v3-reel.jpg"
+    }
   },
   {
-    "id": "05-content-creator",
+    "id": "18-were-this-is-fine",
     "num": "05",
-    "title": "Content Creator®",
-    "style": "Product warning label",
-    "features": "QR to reeldrop.io, principles, scheduling",
-    "method": "DTF (4 colours) or screen print"
+    "title": "This is fine",
+    "style": "We’re reeldrop · black tee",
+    "features": "Meme: calm Lolo in a burning room, posts already scheduled",
+    "method": "DTF full colour",
+    "tees": [
+      "black"
+    ],
+    "imgs": {
+      "black": "assets/img/v3-thisisfine.jpg"
+    }
   },
   {
-    "id": "06-whats-on-the-feed",
+    "id": "19-were-approve-reject",
     "num": "06",
-    "title": "What’s on the feed?",
-    "style": "Ring of spot illustrations",
-    "features": "A day of Lolo: filming, editing, analytics, DMs",
-    "method": "Screen print 1 colour"
-  },
-  {
-    "id": "07-reels-on-autopilot",
-    "num": "07",
-    "title": "Reels on autopilot",
-    "style": "Ingredients label",
-    "features": "Scheduling, DM autopilot, 9:16 life",
-    "method": "Screen print 1 colour or DTF"
-  },
-  {
-    "id": "08-growth-club",
-    "num": "08",
-    "title": "Growth Club",
-    "style": "Retro type lockup",
-    "features": "#1 Instagram growth tool, Explore page",
-    "method": "Screen print 2 colours"
-  },
-  {
-    "id": "09-were-reeldrop",
-    "num": "09",
-    "title": "We’re reeldrop",
-    "style": "Mascot circle badge",
-    "features": "Lolo selfie, made for the creators of tomorrow",
-    "method": "Screen print 2 colours or DTF"
-  },
-  {
-    "id": "10-the-work-is-scheduled",
-    "num": "10",
-    "title": "The work is scheduled",
-    "style": "Number-grid typography",
-    "features": "Scheduling + automations, Lolo as the cursor",
-    "method": "Screen print 1 colour + DTF face, or DTF"
-  },
-  {
-    "id": "11-creator-culture",
-    "num": "11",
-    "title": "creator CULTURE",
-    "style": "Editorial event type",
-    "features": "Six features + best posting slots",
-    "method": "Screen print 2 colours"
-  },
-  {
-    "id": "12-creator-guide",
-    "num": "12",
-    "title": "Creator Guide",
-    "style": "Japanese food-guide poster",
-    "features": "Menu of features, open 24/7",
-    "method": "DTF full colour"
-  },
-  {
-    "id": "13-reel-classic",
-    "num": "13",
-    "title": "Reel Classic",
-    "style": "Hand-painted souvenir collage",
-    "features": "Likes, Explore page, growth tools, Lolo's diner",
-    "method": "DTF full colour"
+    "title": "Approve / reject",
+    "style": "We’re reeldrop · black tee",
+    "features": "Meme: no to posting at 3 am, yes to scheduled with reeldrop",
+    "method": "DTF full colour",
+    "tees": [
+      "black"
+    ],
+    "imgs": {
+      "black": "assets/img/v3-approve.jpg"
+    }
   }
 ];
